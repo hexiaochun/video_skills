@@ -1,0 +1,21 @@
+{
+  "name": "tumblr-video",
+  "displayName": "Tumblr Video Generator",
+  "version": "1.0.0",
+  "description": "Generate Tumblr-style line-by-line reveal videos with TTS narration and Minecraft parkour background. Perfect for TikTok, Reels, and Shorts.",
+  "author": {
+    "name": "m007"
+  },
+  "license": "MIT",
+  "keywords": [
+    "tumblr",
+    "video",
+    "tts",
+    "tiktok",
+    "reels",
+    "shorts",
+    "brainrot",
+    "minecraft"
+  ],
+  "logo": "assets/logo.svg"
+}

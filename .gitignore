@@ -1,0 +1,13 @@
+# Build artifacts
+/output/
+/tumblr-build/
+*.mp4
+!skills/tumblr-video/assets/*.mp4
+
+# System
+.DS_Store
+__pycache__/
+*.pyc
+
+# Temp
+/tmp/
