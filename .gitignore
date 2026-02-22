@@ -3,6 +3,7 @@
 /tumblr-build/
 *.mp4
 !skills/tumblr-video/assets/*.mp4
+!demos/*.mp4
 
 # System
 .DS_Store

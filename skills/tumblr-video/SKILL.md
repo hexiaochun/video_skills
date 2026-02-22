@@ -33,14 +33,38 @@ playwright install chromium
 | Intent | Extra args |
 |--------|-----------|
 | Default (Minecraft background) | none |
-| Female voice | `--voice en-US-AriaNeural` |
-| British accent | `--voice en-GB-SoniaNeural` |
+| 海螺语音（推荐，更自然） | `--engine xskill --voice-id male-qn-qingse` |
+| 海螺女声 | `--engine xskill --voice-id female-chengshu` |
+| Female voice (Edge TTS) | `--voice en-US-AriaNeural` |
+| British accent (Edge TTS) | `--voice en-GB-SoniaNeural` |
 | Green screen output | `--green-screen` |
 | Custom background video | `--bg-video /path/to/bg.mp4` |
 | Read text from file | `-i story.txt` |
 | Specify output path | `-o /path/output.mp4` |
 
-### Available Voices
+### Voice Selection
+
+#### xskill 海螺语音（推荐，效果更自然）
+
+需要 `XSKILL_API_KEY` 环境变量。查看可用音色：
+
+```bash
+python tumblr_video.py --xskill-voices --tag 男
+python tumblr_video.py --xskill-voices --tag 女
+```
+
+推荐音色：
+
+| 场景 | 音色 ID | 名称 |
+|------|---------|------|
+| 科普解说（男声） | `male-qn-qingse` | 青涩青年 |
+| 专业权威（男声） | `male-qn-jingying` | 精英青年 |
+| 知性讲解（女声） | `female-chengshu` | 成熟女性 |
+| 活泼风格（女声） | `female-shaonv` | 少女 |
+| 甜美旁白（女声） | `female-tianmei` | 甜美女性 |
+| 御姐解说（女声） | `female-yujie` | 御姐 |
+
+#### Edge TTS（免费备选，默认）
 
 - `en-US-AndrewNeural` — Male (default)
 - `en-US-AriaNeural` — Female

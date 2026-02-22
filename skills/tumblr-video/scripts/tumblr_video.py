@@ -29,6 +29,8 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
+import urllib.request
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -326,7 +328,7 @@ def _get_audio_duration(path: Path) -> float:
 
 
 async def generate_audio(text: str, voice: str, out: Path) -> Path:
-    """Generate TTS audio. Returns audio_path."""
+    """Generate TTS audio via Edge TTS. Returns audio_path."""
     comm = edge_tts.Communicate(text, voice)
     chunks = []
 
@@ -341,6 +343,110 @@ async def generate_audio(text: str, voice: str, out: Path) -> Path:
     dur = _get_audio_duration(out)
     print(f"  [ok] Audio -> {out}  ({dur:.2f}s)")
     return out
+
+
+# ── xskill TTS (Minimax) ──────────────────────────────────────────
+
+XSKILL_BASE = "https://api.xskill.ai"
+
+
+def _xskill_req(method: str, path: str, body: dict | None = None,
+                token: str | None = None) -> dict:
+    url = f"{XSKILL_BASE}{path}"
+    headers = {
+        "Content-Type": "application/json",
+        "Origin": "https://www.xskill.ai",
+        "Referer": "https://www.xskill.ai/",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    data = json.dumps(body).encode() if body else None
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return json.loads(resp.read())
+
+
+def _extract_audio_url(result) -> str | None:
+    if isinstance(result, str) and result.startswith("http"):
+        return result
+    if isinstance(result, dict):
+        for key in ("audio_url", "audio_file", "url", "output_url", "file_url"):
+            v = result.get(key)
+            if v and isinstance(v, str) and v.startswith("http"):
+                return v
+        for v in result.values():
+            found = _extract_audio_url(v)
+            if found:
+                return found
+    if isinstance(result, list):
+        for item in result:
+            found = _extract_audio_url(item)
+            if found:
+                return found
+    return None
+
+
+def _download_file(url: str, path: Path):
+    req = urllib.request.Request(url)
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        path.write_bytes(resp.read())
+
+
+def generate_audio_xskill(text: str, voice_id: str, out: Path,
+                          api_key: str, tts_model: str = "speech-2.8-hd") -> Path:
+    """Generate TTS audio via xskill Minimax. Returns audio_path."""
+    params = {"text": text, "voice_id": voice_id, "model": tts_model,
+              "output_format": "url"}
+    resp = _xskill_req("POST", "/api/v3/tasks/create",
+                       body={"model": "minimax/t2a", "params": params},
+                       token=api_key)
+    task_id = resp.get("data", {}).get("task_id")
+    if not task_id:
+        raise RuntimeError(f"xskill submit failed: {resp}")
+    print(f"  [submit] → {task_id[:8]}...")
+
+    elapsed = 0
+    timeout = 300
+    while elapsed < timeout:
+        time.sleep(3)
+        elapsed += 3
+        resp = _xskill_req("POST", "/api/v3/tasks/query",
+                           body={"task_id": task_id}, token=api_key)
+        status = resp.get("data", {}).get("status", "unknown")
+        if status == "completed":
+            result = resp.get("data", {}).get("result", {})
+            audio_url = _extract_audio_url(result)
+            if audio_url:
+                _download_file(audio_url, out)
+                dur = _get_audio_duration(out)
+                print(f"  [ok] Audio -> {out}  ({dur:.2f}s)")
+                return out
+            raise RuntimeError(f"no audio URL in result: {result}")
+        elif status == "failed":
+            err = resp.get("data", {}).get("error", "unknown")
+            raise RuntimeError(f"xskill TTS failed: {err}")
+
+    raise RuntimeError(f"xskill TTS timed out after {timeout}s")
+
+
+def xskill_list_voices(tag: str | None = None):
+    api_key = os.environ.get("XSKILL_API_KEY")
+    if not api_key:
+        print("错误: 未设置 XSKILL_API_KEY 环境变量", file=sys.stderr)
+        sys.exit(1)
+    resp = _xskill_req("POST", "/api/v2/minimax/voices?status=active",
+                       body={}, token=api_key)
+    voices = resp.get("data", {}).get("public_voices", [])
+    if tag:
+        voices = [v for v in voices if tag in ",".join(v.get("tags") or [])]
+    for v in voices:
+        tags = ",".join(v.get("tags") or [])
+        audio = v.get("audio_url", "")
+        print(f"  {v['voice_id']:<45} {v['voice_name']:<20} [{tags}]")
+        if audio:
+            print(f"    试听: {audio}")
+    print(f"\n共 {len(voices)} 个公共音色")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -507,7 +613,9 @@ def assemble_video(timeline, audio: Path, out: Path,
 # ═══════════════════════════════════════════════════════════════
 
 async def run(text: str, output: str, voice: str,
-              work_dir: str | None = None, bg_video: str | None = None):
+              work_dir: str | None = None, bg_video: str | None = None,
+              engine: str = "edge", voice_id: str | None = None,
+              tts_model: str = "speech-2.8-hd"):
     base = Path(work_dir) if work_dir else Path(tempfile.mkdtemp(prefix="tumblr-vid-"))
     base.mkdir(parents=True, exist_ok=True)
     out_path = Path(output).resolve()
@@ -518,7 +626,11 @@ async def run(text: str, output: str, voice: str,
     print(f"  Tumblr Post Video Generator")
     print(f"{bar}")
     print(f"  Text:   {text[:80]}{'...' if len(text)>80 else ''}")
-    print(f"  Voice:  {voice}")
+    print(f"  Engine: {engine}")
+    if engine == "xskill":
+        print(f"  Voice:  {voice_id or 'male-qn-qingse'} (海螺)")
+    else:
+        print(f"  Voice:  {voice}")
     if bg_path:
         print(f"  BG:     {bg_path}")
     print(f"  Output: {out_path}")
@@ -535,7 +647,17 @@ async def run(text: str, output: str, voice: str,
 
     # 3 ── TTS
     print("\n[3/6] Generating TTS audio...")
-    audio_path = await generate_audio(text, voice, base / "audio.mp3")
+    if engine == "xskill":
+        api_key = os.environ.get("XSKILL_API_KEY")
+        if not api_key:
+            print("错误: 未设置 XSKILL_API_KEY 环境变量", file=sys.stderr)
+            print("请执行: export XSKILL_API_KEY='sk-xxx'", file=sys.stderr)
+            sys.exit(1)
+        audio_path = generate_audio_xskill(
+            text, voice_id or "male-qn-qingse", base / "audio.mp3",
+            api_key, tts_model)
+    else:
+        audio_path = await generate_audio(text, voice, base / "audio.mp3")
 
     # 4 ── Timeline
     print("\n[4/6] Building timeline...")
@@ -583,17 +705,25 @@ def main():
         epilog="""Examples:
   python tumblr_video.py "I like talking to small children..."
   python tumblr_video.py -i story.txt -o output.mp4
+  python tumblr_video.py -i story.txt --engine xskill --voice-id male-qn-qingse
   python tumblr_video.py -i story.txt --voice en-US-AriaNeural
   python tumblr_video.py -i story.txt --green-screen
   python tumblr_video.py -i story.txt --bg-video custom.mp4
-  python tumblr_video.py --list-voices""")
+  python tumblr_video.py --list-voices
+  python tumblr_video.py --xskill-voices --tag 男""")
 
     ap.add_argument("text", nargs="?", help="Text content (or use -i)")
     ap.add_argument("-i", "--input", help="Input text file")
     ap.add_argument("-o", "--output", default="tumblr-video.mp4",
                     help="Output video path  (default: tumblr-video.mp4)")
+    ap.add_argument("--engine", choices=["xskill", "edge"], default="edge",
+                    help="TTS engine: xskill (海螺, better quality) / edge (free, default)")
+    ap.add_argument("--voice-id", default=None,
+                    help="xskill voice ID (e.g. male-qn-qingse, only with --engine xskill)")
+    ap.add_argument("--tts-model", default="speech-2.8-hd",
+                    help="xskill TTS model (default: speech-2.8-hd)")
     ap.add_argument("--voice", default="en-US-AndrewNeural",
-                    help="edge-tts voice  (default: en-US-AndrewNeural)")
+                    help="edge-tts voice  (default: en-US-AndrewNeural, only with --engine edge)")
     ap.add_argument("--bg-video",
                     help="Background video path (default: Minecraft parkour)")
     ap.add_argument("--green-screen", action="store_true",
@@ -601,9 +731,17 @@ def main():
     ap.add_argument("--work-dir",
                     help="Working directory for intermediate files")
     ap.add_argument("--list-voices", action="store_true",
-                    help="List available English voices and exit")
+                    help="List available Edge TTS English voices and exit")
+    ap.add_argument("--xskill-voices", action="store_true",
+                    help="List available xskill voices (海螺 Minimax) and exit")
+    ap.add_argument("--tag", default=None,
+                    help="Filter xskill voices by tag (e.g. 男/女/中文/英文)")
 
     args = ap.parse_args()
+
+    if args.xskill_voices:
+        xskill_list_voices(args.tag)
+        return
 
     if args.list_voices:
         asyncio.run(_list_voices())
@@ -619,7 +757,9 @@ def main():
 
     bg = None if args.green_screen else args.bg_video
 
-    asyncio.run(run(text, args.output, args.voice, args.work_dir, bg))
+    asyncio.run(run(text, args.output, args.voice, args.work_dir, bg,
+                    engine=args.engine, voice_id=args.voice_id,
+                    tts_model=args.tts_model))
 
 
 if __name__ == "__main__":
