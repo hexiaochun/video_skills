@@ -1,6 +1,6 @@
 # Video Skills
 
-**Cursor Skills 合集** — 一句话生成短视频。在 Cursor 中用自然语言驱动 AI 自动完成调研、文案、配音、动画、合成全流程。
+**AI Agent Skills 合集** — 一句话生成短视频。支持 **Cursor** 和 **Claude Code**，用自然语言驱动 AI 自动完成调研、文案、配音、动画、合成全流程。
 
 ## Skills 一览
 
@@ -29,6 +29,20 @@ git clone https://github.com/hexiaochun/video_skills.git .cursor/skills/video_sk
 cp -r video_skills/skills/tumblr-video .cursor/skills/
 ```
 
+### 安装到 Claude Code
+
+将本仓库克隆到项目的 `.codex/skills/` 目录下，Claude Code 会自动发现并加载所有 skills：
+
+```bash
+git clone https://github.com/hexiaochun/video_skills.git .codex/skills/video_skills
+```
+
+> **已有 Cursor 安装？** 只需建一个符号链接即可同时支持两者：
+>
+> ```bash
+> mkdir -p .codex && ln -s ../.cursor/skills .codex/skills
+> ```
+
 ### 前置依赖
 
 - **Python 3.10+**
@@ -42,7 +56,7 @@ playwright install chromium
 
 ## 使用方式
 
-安装后在 Cursor Agent 聊天中直接用自然语言描述即可，例如：
+安装后在 Cursor Agent 或 Claude Code 中直接用自然语言描述即可，例如：
 
 > "做一个关于量子计算的科普视频"
 
@@ -50,7 +64,7 @@ playwright install chromium
 
 > "用 Lottie 动画做一个焦虑管理的讲解短视频"
 
-Agent 会自动识别并调用对应的 skill，完成从文案到成片的全流程。
+Agent 会自动识别并调用对应的 skill，完成从文案到成片的全流程。Cursor 和 Claude Code 均可使用。
 
 ## 视频案例
 
@@ -99,6 +113,14 @@ AI 视频生成技术解读：双分支扩散 Transformer 架构
 [![Seedance 2.0](demos/thumbnails/seedance2.jpg)](https://github.com/hexiaochun/video_skills/blob/main/demos/seedance2.mp4)
 
 ### svg-video Lottie 动画讲解
+
+#### 💆 缓解焦虑
+
+> 提示词：如何缓解焦虑
+
+5 招科学方法（深呼吸、运动、正念、肌肉放松、自我关怀），20 段 Lottie 动画逐句讲解
+
+[![缓解焦虑](demos/thumbnails/anxiety-relief-lottie.jpg)](https://github.com/hexiaochun/video_skills/blob/main/demos/anxiety-relief-lottie.mp4)
 
 #### 😌 焦虑管理
 

@@ -1,0 +1,34 @@
+
+=== Category: medical ===
+  Searching: medical...
+    Found 0 slugs
+  Searching: healthcare...
+    Found 0 slugs
+  Searching: doctor...
+    Found 0 slugs
+  Searching: hospital...
+    Found 8 slugs
+    + Heartbeat Lottie Animation
+      URL: https://assets-v2.lottiefiles.com/a/28eb2ff4-117b-11ee-ab4d-af0f3e9153ed/v89fEUK5MO.lottie
+    + Medical Shield
+      URL: https://assets-v2.lottiefiles.com/a/2900df12-116b-11ee-b8f2-f3fcf0c0c1f7/7dQcQHxHpJ.lottie
+    + Hospital
+      URL: https://assets-v2.lottiefiles.com/a/23701404-1162-11ee-bdc9-1f839caf0603/h36oKmU8L4.lottie
+    + Doctor Prescription
+      URL: https://assets-v2.lottiefiles.com/a/30a3dfbc-1175-11ee-9143-2fbc2f2bb32a/ZYqmVR5A8E.lottie
+    + hospital
+      URL: https://assets-v2.lottiefiles.com/a/17171506-117e-11ee-a49b-57284fed9442/uJrfuynR6O.lottie
+
+=== Category: people ===
+  Searching: teamwork...
+    Found 0 slugs
+  Searching: collaboration...
+    Found 0 slugs
+  Searching: communication...
+    Found 8 slugs
+    + Share
+      URL: https://assets-v2.lottiefiles.com/a/adf874ca-117d-11ee-b880-3fca0cf169e6/bIlM45aCdO.lottie
+    + Figure Message sent
+      URL: https://assets-v2.lottiefiles.com/a/b21c3c38-4a40-11ef-95ac-cf0e75ead3bb/od5LodSv87.lottie
+    + Business Analysis
+      URL: https://assets-v2.lottiefiles.com/a/5fd53558-1169-11ee-8260-cf90568cdc21/aa5Yf5PxRk.lottie

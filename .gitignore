@@ -1,5 +1,6 @@
 # Build artifacts
 /output/
+/out/
 /tumblr-build/
 *.mp4
 !skills/tumblr-video/assets/*.mp4

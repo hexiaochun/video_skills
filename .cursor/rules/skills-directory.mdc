@@ -1,0 +1,38 @@
+---
+description: Skills 开发必须放在 skills/ 目录下
+alwaysApply: true
+---
+
+# Skills 仓库结构
+
+这是一个 skills 仓库。所有 skill 的开发、新增、修改都必须放在 `skills/` 目录下。
+
+## 目录结构
+
+```
+skills/
+  <skill-name>/
+    SKILL.md          # skill 描述与使用说明
+    scripts/           # 脚本文件
+    requirements.txt   # Python 依赖（如需要）
+    assets/            # 静态资源（如需要）
+```
+
+## 符号链接约定
+
+以下目录都通过符号链接引用 `skills/`，不要直接在这些目录下创建文件：
+
+- `.codex/skills/` → `../skills`（整个目录的符号链接）
+- `.cursor/skills/<name>` → 项目 skill 直接存放 或 `../.agents/skills/<name>`
+- `.claude/skills/<name>` → `../../skills/<name>` 或 `../../.agents/skills/<name>`
+- `.agent/skills/<name>` → `../../skills/<name>` 或 `../../.agents/skills/<name>`
+- `.agents/skills/<name>` → `../../skills/<name>`（外部安装的 skill 为实际目录）
+- `.iflow/skills/<name>` → `../../skills/<name>` 或 `../../.agents/skills/<name>`
+- `.kiro/skills/<name>` → `../../skills/<name>` 或 `../../.agents/skills/<name>`
+- `.trae/skills/<name>` → `../../skills/<name>` 或 `../../.agents/skills/<name>`
+- `.windsurf/skills/<name>` → `../../skills/<name>` 或 `../../.agents/skills/<name>`
+
+新增项目 skill 时：
+1. 在 `skills/<skill-name>/` 下创建完整目录结构
+2. 在所有 agent 目录（`.cursor/skills/`、`.claude/skills/`、`.agent/skills/`、`.agents/skills/`、`.iflow/skills/`、`.kiro/skills/`、`.trae/skills/`、`.windsurf/skills/`）中添加符号链接指向它
+3. `SKILL.md` 使用 YAML frontmatter 包含 `name` 和 `description` 字段
